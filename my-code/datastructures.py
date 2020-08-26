@@ -30,3 +30,5 @@ l_valid = all([n > 0 for n in l])
 print(l_valid)
 l_valid = any([n < 0 for n in l])
 print(l_valid)
+
+
