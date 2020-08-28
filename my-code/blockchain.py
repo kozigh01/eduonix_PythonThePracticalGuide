@@ -1,6 +1,8 @@
 import functools as ft
 from hashlib import sha256
 from collections import OrderedDict
+import json
+import pickle
 
 from hash_util import hash_string_256, hash_block
 
@@ -16,7 +18,48 @@ genesis_block = {
 blockchain = [genesis_block]
 open_transactions = []
 owner = 'Mark'
-participants = set()
+participants = {'Mark'}
+
+
+def save_data():
+    with open('blockchain.p', mode="wb") as f:
+        # f.write(json.dumps(blockchain))
+        # f.write('\n')
+        # f.write(json.dumps(open_transactions))
+        f.write(pickle.dumps({ 'chain': blockchain,'ot': open_transactions }))
+
+
+
+
+def load_block(block):
+    return {
+        'previous_hash': block['previous_hash'],
+        'index': block['index'],
+        'proof': block['proof'],
+        'transactions': [load_transaction(tx) for tx in block['transactions']]
+    }
+
+def load_transaction(tx):
+    return OrderedDict([
+        ('sender', tx['sender']),
+        ('recipient', tx['recipient']),
+        ('amount', tx['amount'])
+    ])
+
+
+def load_data():
+    with open('blockchain.p', mode='rb') as f:
+        # content = f.readlines()
+        global blockchain
+        global open_transactions
+        # blockchain = [load_block(block) for block in json.loads(content[0][:-1])]
+        # open_transactions = [load_transaction(json.loads(content[1])) for tx in json.loads(content[1])]
+        content  = pickle.loads(f.read())
+        blockchain = content['chain']
+        open_transactions = content['ot']
+
+
+load_data()
 
 
 def valid_proof(transactions, last_hash, proof):
@@ -78,6 +121,7 @@ def add_transaction(recipient, sender=owner, amount=1):
         open_transactions.append(transaction)
         participants.add(recipient)
         participants.add(sender)
+        save_data()
         return True
 
     return False
@@ -164,6 +208,7 @@ while waiting_for_input:
     elif user_choice == '2':
         if mine_block():
             open_transactions = []
+            save_data()
     elif user_choice == '3':
         print_blockchain_elements()
     elif user_choice == '4':
