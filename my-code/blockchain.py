@@ -9,26 +9,19 @@ from hash_util import hash_string_256, hash_block
 MINING_REWARD = 10
 
 
-genesis_block = {
-    'previous_hash': '',
-    'index': 0,
-    'transactions': [],
-    'proof': 100
-}
-blockchain = [genesis_block]
+blockchain = []
 open_transactions = []
+
 owner = 'Mark'
 participants = {'Mark'}
 
 
 def save_data():
-    with open('blockchain.p', mode="wb") as f:
-        # f.write(json.dumps(blockchain))
-        # f.write('\n')
-        # f.write(json.dumps(open_transactions))
-        f.write(pickle.dumps({ 'chain': blockchain,'ot': open_transactions }))
-
-
+    try:
+        with open('blockchain.p', mode="wb") as f:
+            f.write(pickle.dumps({'chain': blockchain, 'ot': open_transactions}))
+    except IOError:
+        print('Save failed!')
 
 
 def load_block(block):
@@ -39,6 +32,7 @@ def load_block(block):
         'transactions': [load_transaction(tx) for tx in block['transactions']]
     }
 
+
 def load_transaction(tx):
     return OrderedDict([
         ('sender', tx['sender']),
@@ -48,15 +42,32 @@ def load_transaction(tx):
 
 
 def load_data():
-    with open('blockchain.p', mode='rb') as f:
-        # content = f.readlines()
+    try:
+        with open('blockchain.p', mode='rb') as f:
+            global blockchain
+            global open_transactions
+            content = pickle.loads(f.read())
+            blockchain = content['chain']
+            open_transactions = content['ot']
+    except (IOError):
+        # file is not found, so initialize with genesis block
+        genesis_block = {
+            'previous_hash': '',
+            'index': 0,
+            'transactions': [],
+            'proof': 100
+        }
         global blockchain
-        global open_transactions
-        # blockchain = [load_block(block) for block in json.loads(content[0][:-1])]
-        # open_transactions = [load_transaction(json.loads(content[1])) for tx in json.loads(content[1])]
-        content  = pickle.loads(f.read())
-        blockchain = content['chain']
-        open_transactions = content['ot']
+        global open_transactions    
+        blockchain = [genesis_block]
+        open_transactions = []
+        print('File not found!')
+    except (FileExistsError, ValueError):
+        print('Handle multiple Error!')
+    except:
+        print('Wildcard')
+    finally:
+        print('this always runs')
 
 
 load_data()
@@ -65,7 +76,6 @@ load_data()
 def valid_proof(transactions, last_hash, proof):
     guess = (str(transactions) + str(last_hash) + str(proof)).encode()
     guess_hash = hash_string_256(guess)
-    print(guess_hash)
     return guess_hash[:2] == '00'
 
 
