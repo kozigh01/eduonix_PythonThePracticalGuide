@@ -1,10 +1,10 @@
 import functools as ft
 import pickle
 
-from hash_util import hash_block
+from utility.hash_util import hash_block
+from utility.verification import Verification
 from block import Block
 from transaction import Transaction
-from verification import Verification
 
 
 MINING_REWARD = 10
